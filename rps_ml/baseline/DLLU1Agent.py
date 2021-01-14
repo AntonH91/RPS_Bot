@@ -4,6 +4,8 @@ import random
 
 # noinspection PyTypeChecker
 class DLLU1Agent(ContestAgent):
+    # Source: http://www.rpscontest.com/entry/498002
+    # @author: dllu
     def __init__(self):
         super().__init__()
         self.numMeta = 6
