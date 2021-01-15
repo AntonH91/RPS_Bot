@@ -1,11 +1,13 @@
-from rps.agent import RPSAgent
+from rps.agent.base_agent import RPSAgent
 
 import rps.constants as c
+
 WINNING_MOVES = {
     c.Move.ROCK: c.Move.PAPER,
     c.Move.PAPER: c.Move.SCISSORS,
     c.Move.SCISSORS: c.Move.ROCK
 }
+
 
 def check_winner(played_move: c.Move, opposing_move: c.Move) -> c.GameState:
     """Compares two moves and returns a win state depending on the played move vs. the opposing move.
@@ -21,7 +23,8 @@ def check_winner(played_move: c.Move, opposing_move: c.Move) -> c.GameState:
         else:
             return c.GameState.WIN
 
-def get_winner(p1 : RPSAgent, p1_move: c.Move, p2: RPSAgent, p2_move: c.Move):
+
+def get_winner(p1: RPSAgent, p1_move: c.Move, p2: RPSAgent, p2_move: c.Move):
     """Gets two pairs of agents and moves, then returns the winning agent.
 
     @:param p1 The agent representing Player 1

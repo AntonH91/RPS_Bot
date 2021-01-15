@@ -1,4 +1,4 @@
-from rps.agent.RPSAgent import RPSAgent
+from rps.agent.base_agent import RPSAgent
 from rps.constants import Move, GameState
 from rps.utils import utils
 
