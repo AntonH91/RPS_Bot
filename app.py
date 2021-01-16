@@ -1,12 +1,31 @@
 from rps.agent.agents import RepeatAgent, HumanAgent
 from rps.game.GameRunner import GameRunner
 from rps_ml.baseline.rpscontest_agent import DLLU1Agent, MetaFixAgent
+from rps_ml.ai_agent.ai_agent import AiAgent
+from rps_ml.ai_agent.models import DefaultGameplayModel, DefaultPredictionModel
+
+
+
 
 NUM_ROUNDS = 1000
 NUM_GAMES = 100
 
 p1 = MetaFixAgent()
-p2 = DLLU1Agent()
+p2 = RepeatAgent()
+
+
+gameplay_model = DefaultGameplayModel()
+prediction_model = DefaultPredictionModel()
+
+gameplay_model.compile(optimizer='rmsprop', loss='mse')
+prediction_model.compile(optimizer=None, loss='categorical_crossentropy')
+
+pai = AiAgent(prediction_model=prediction_model,
+              gameplay_model=gameplay_model)
+
+
+p1 = pai
+p2 = MetaFixAgent()
 
 game = GameRunner(p1, p2, num_rounds=NUM_ROUNDS)
 
