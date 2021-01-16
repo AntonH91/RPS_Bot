@@ -2,10 +2,10 @@ from enum import Enum
 
 
 class GameState(Enum):
-    WIN = 1
     DRAW = 0
-    LOSS = -1
-    DISQUALIFIED = -2
+    WIN = 1
+    LOSS = 2
+    DISQUALIFIED = 3
 
 class Move(Enum):
     ROCK = 1

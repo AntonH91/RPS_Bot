@@ -1,3 +1,5 @@
+from tensorflow.python.keras.utils.np_utils import to_categorical
+
 from rps.agent.base_agent import RPSAgent
 
 import rps.constants as c
@@ -42,3 +44,7 @@ def get_winner(p1: RPSAgent, p1_move: c.Move, p2: RPSAgent, p2_move: c.Move):
         return p2
     else:
         return None
+
+
+def get_categorical_move(move: c.Move):
+    return to_categorical(move.value - 1, len(c.Move))
