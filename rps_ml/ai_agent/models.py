@@ -14,7 +14,7 @@ class DefaultPredictionModel(tf.keras.Model):
         super().__init__(*args, **kwargs)
         self.input_layer = InputLayer(input_shape=(None, 10))
 
-        self.lstms = [LSTM(units=32, return_sequences=True) for _ in range(5)]
+        self.lstms = [LSTM(units=32, return_sequences=True) for _ in range(10)]
 
         self.lstm_out = LSTM(units=32, return_sequences=False)
         self.classifier = Dense(units=3, activation='softmax')
@@ -46,7 +46,7 @@ class DefaultGameplayModel(tf.keras.Model):
         super().__init__(*args, **kwargs)
         self.input_layer = InputLayer(input_shape=(1, 14))
 
-        self.dense_layers = [Dense(units=256, activation='relu') for _ in range(6)]
+        self.dense_layers = [Dense(units=256, activation='relu') for _ in range(12)]
 
         self.output_layer = Dense(units=3, activation='softmax')
 
