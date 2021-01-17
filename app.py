@@ -11,12 +11,9 @@ import tensorflow as tf
 import csv
 
 NUM_ROUNDS = 1000
-NUM_GAMES = 100
+NUM_GAMES = 10
 MODEL_LOCATION = 'SavedModels/BestGameplayModel'
 DATA_LOCATION = ''
-
-p1 = MetaFixAgent()
-p2 = RepeatAgent()
 
 gameplay_model = DefaultGameplayModel()
 prediction_model = DefaultPredictionModel()
@@ -26,7 +23,7 @@ prediction_model.compile(optimizer=None, loss='categorical_crossentropy')
 
 
 def run_training():
-    trainee = AiAgent(prediction_model, gameplay_model)
+    trainee = AiAgent(prediction_model, gameplay_model, epsilon=0.2)
     trainer = MetaFixAgent()
 
     dojo = RPSDojo(trainee=trainee,
@@ -36,7 +33,8 @@ def run_training():
                    loss=tf.keras.losses.MeanSquaredError(),
                    discount=0.95,
                    rounds_in_episode=NUM_ROUNDS,
-                   trainee_logging_path=DATA_LOCATION + 'action_history.csv')
+                   trainee_logging_path=DATA_LOCATION + 'action_history.csv'
+                   )
 
     dojo.run_training()
 
