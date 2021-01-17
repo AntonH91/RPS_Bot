@@ -15,8 +15,11 @@ class AiAgent(RPSAgent):
 
     def __init__(self, prediction_model: tf.keras.Model, gameplay_model: tf.keras.models.Model,
                  move_batch_size=16, training=True,
-                 rewards={GameState.WIN: 1, GameState.DRAW: 0, GameState.LOSS: -1}) -> None:
+                 rewards=None) -> None:
         super().__init__()
+
+        if rewards is None:
+            rewards = {GameState.WIN: 1, GameState.DRAW: 0, GameState.LOSS: -1, GameState.DISQUALIFIED: -10}
 
         self.history = []
         self.prediction_history = []
@@ -35,8 +38,11 @@ class AiAgent(RPSAgent):
         self.estimation_hits = 0.0
         self.estimation_misses = 0.0
         self.played_rounds = 0
-
+        self.state = None
         self.last_observations = None
+
+        # Should be loaded with a numpy array containing (state, new_state, action, reward)
+        self.experiences = deque(maxlen=2000)
 
     def reset(self):
         super().reset()
@@ -48,6 +54,9 @@ class AiAgent(RPSAgent):
         self.estimation_misses = 0.0
         self.played_rounds = 0
         self.last_observations = None
+        self.state = None
+
+        self.experiences = deque(maxlen=2000)
 
         # Reset weights for the prediction model, so it can learn about a new agent
         if not self.initial_prediction_weights is None:
@@ -77,6 +86,11 @@ class AiAgent(RPSAgent):
         # Record the latest set of observations for the next round of the game
         self.last_observations = [own_move, opponent_move, result, next_opponent_move, self.hit_ratio()]
 
+        new_state, new_preds = self.observation_to_state(self.last_observations)
+
+        if self.state is not None:
+            self.experiences.append(np.array([self.state, new_state, own_move.value, self.rewards[result]], dtype=object))
+
         self.played_rounds += 1
 
     def update_prediction_weights(self):
@@ -93,7 +107,7 @@ class AiAgent(RPSAgent):
             inputs[index] = ts_data[index: batch_size + index, :]
             labels[index] = ts_data[index + batch_size, len(Move):len(Move) * 2]
 
-        self.prediction_model.fit(inputs, labels)
+        self.prediction_model.fit(inputs, labels, verbose=0)
 
     def estimate_opponent_move(self) -> Move:
         """Runs the predictive model to estimate the opponents' next move"""
@@ -115,19 +129,13 @@ class AiAgent(RPSAgent):
         @:return Move enum value corresponding to the next intended Move"""
 
         if observations is not None:
-            own_last_move, opponent_last_move, outcome, predicted_move, hit_ratio = observations
 
-            # Compute the categorical of the observation
-            own_move = get_categorical_move(own_last_move)
-            opposing_move = get_categorical_move(opponent_last_move)
-            result = to_categorical(outcome.value, len(GameState))
-            predicted_move = get_categorical_move(predicted_move)
-
-            # Concatenate it all to a numpy array for feeding into the network
-            inputs = np.concatenate([own_move, opposing_move, result, predicted_move, [hit_ratio]])
-            inputs = inputs.reshape((1,) + inputs.shape)
             # Add the next prediction history
-            self.prediction_history.append(np.concatenate([own_move, opposing_move, result]))
+
+            inputs, pred_state = self.observation_to_state(observations)
+
+            self.prediction_history.append(pred_state)
+            self.state = inputs
 
             # Predict the next move
             next_move = self.gameplay_model.predict(inputs)
@@ -135,6 +143,27 @@ class AiAgent(RPSAgent):
         else:
             next_move = random.choice(self.moves)
         return next_move
+
+    def observation_to_state(self, observation):
+        """Receives an observation and translates it into a state, for use with the network
+        @:param observation Array-like [own_last_move, opponent_last_move, outcome, predicted_move, hit_ratio]
+        @:return Tuple containing the Numpy array with the shape (1, 14) containing the observations for the gameplay,
+        and for the predictions """
+        own_last_move, opponent_last_move, outcome, predicted_move, hit_ratio = observation
+
+        # Compute the categorical of the observation
+        own_move = get_categorical_move(own_last_move)
+        opposing_move = get_categorical_move(opponent_last_move)
+        result = to_categorical(outcome.value, len(GameState))
+        predicted_move = get_categorical_move(predicted_move)
+
+        # Concatenate it all to a numpy array for feeding into the network
+        state = np.concatenate([own_move, opposing_move, result, predicted_move, [hit_ratio]])
+        state = state.reshape((1,) + state.shape)
+
+        pred_state = np.concatenate([own_move, opposing_move, result])
+
+        return state, pred_state
 
     def hit_ratio(self):
         """Calculates how many times the predictive model has been correct, for observation purposes"""
