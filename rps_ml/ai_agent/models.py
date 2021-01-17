@@ -1,6 +1,6 @@
 from abc import ABC
 
-from tensorflow.keras.layers import LSTM, Dense, InputLayer
+from tensorflow.keras.layers import LSTM, Dense, InputLayer, BatchNormalization
 
 import tensorflow as tf
 
@@ -40,13 +40,14 @@ class DefaultGameplayModel(tf.keras.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.dense1 = Dense(units=32, activation='relu')
-        self.dense2 = Dense(units=32, activation='relu')
-        self.dense3 = Dense(units=32, activation='relu')
+        self.dense1 = Dense(units=64, activation='relu')
+        self.dense2 = Dense(units=64, activation='relu')
+        self.dense3 = Dense(units=64, activation='relu')
 
         self.output_layer = Dense(units=3, activation='softmax')
 
     def call(self, inputs, training=None, mask=None):
+
         x = self.dense1(inputs)
         x = self.dense2(x)
         x = self.dense3(x)
