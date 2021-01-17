@@ -8,12 +8,16 @@ from rps.game.GameRunner import GameRunner
 import rps.utils.utils as utils
 import numpy as np
 
+from pathlib import Path
+import csv
+
 
 class RPSDojo():
 
     def __init__(self, trainee: AiAgent, trainer: RPSAgent, episodes: int,
                  optimizer: tf.keras.optimizers.Optimizer, loss: tf.keras.losses.Loss,
-                 batch_size=64, discount=0.9, rounds_in_episode=1000) -> None:
+                 batch_size=64, discount=0.9, rounds_in_episode=1000,
+                 trainee_logging_path=None) -> None:
         """Instantiates a new training setup for the ML Agent
 
         @:param trainee The AI Agent to be trained
@@ -44,6 +48,7 @@ class RPSDojo():
         self.best_weights = None
 
         self.training_history = []
+        self.trainee_logging_path = trainee_logging_path
 
     def run_training(self):
         model = self.trainee.gameplay_model
@@ -71,7 +76,7 @@ class RPSDojo():
 
             loss = self.training_step()
 
-            self.training_history.append((loss, total_reward))
+            self.training_history.append((float(loss), total_reward))
 
             # total_reward = tf.reduce_sum(self.trainee.experiences, axis=4)
 
@@ -83,13 +88,16 @@ class RPSDojo():
                   (i + 1, self.episodes, (round_count / self.game.num_rounds) * 100, total_reward, loss),
                   end="")
 
+            if self.trainee_logging_path is not None:
+                self.trainee.write_history(self.trainee_logging_path)
+
             self.game.reset()
             print()
 
         model.set_weights(self.best_weights)
 
-
-
+    # Gathered from
+    # https://colab.research.google.com/github/ageron/handson-ml2/blob/master/18_reinforcement_learning.ipynb#scrollTo=K912ogLfbdYX
     def training_step(self, batch_size=32):
         model = self.trainee.gameplay_model
         experiences = self.sample_experiences()
@@ -115,8 +123,6 @@ class RPSDojo():
 
         return loss
 
-    # Gathered from
-    # https://colab.research.google.com/github/ageron/handson-ml2/blob/master/18_reinforcement_learning.ipynb#scrollTo=K912ogLfbdYX
     def sample_experiences(self, batch_size=32):
         experiences = self.trainee.experiences
 
@@ -126,3 +132,13 @@ class RPSDojo():
             np.array([experience[field_index] for experience in batch])
             for field_index in range(4)]
         return states, new_states, actions, rewards
+
+    def write_history(self, filepath):
+
+        file = Path(filepath)
+        file.touch(exist_ok=True)
+
+        with open(filepath, 'a', newline='') as f:
+            w = csv.writer(f, dialect='excel')
+            w.writerow(["Loss", "Reward"])
+            w.writerows(self.training_history)

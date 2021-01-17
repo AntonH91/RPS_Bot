@@ -5,14 +5,15 @@ from rps_ml.ai_agent.ai_agent import AiAgent
 from rps_ml.ai_agent.models import DefaultGameplayModel, DefaultPredictionModel
 
 from rps_ml.ai_agent.training import RPSDojo
+from pathlib import Path
 
 import tensorflow as tf
 import csv
 
 NUM_ROUNDS = 1000
-NUM_GAMES = 5
+NUM_GAMES = 100
 MODEL_LOCATION = 'SavedModels/BestGameplayModel'
-DATA_LOCATION = 'Statistics/'
+DATA_LOCATION = ''
 
 p1 = MetaFixAgent()
 p2 = RepeatAgent()
@@ -33,24 +34,15 @@ def run_training():
                    episodes=NUM_GAMES,
                    optimizer=tf.keras.optimizers.Adam(),
                    loss=tf.keras.losses.MeanSquaredError(),
-                   discount=0.95)
+                   discount=0.95,
+                   rounds_in_episode=NUM_ROUNDS,
+                   trainee_logging_path=DATA_LOCATION + 'action_history.csv')
 
     dojo.run_training()
 
     gameplay_model.save(MODEL_LOCATION, include_optimizer=False)
 
-    with open(DATA_LOCATION + 'training_history.csv', 'w', newline='') as f:
-        w = csv.writer(f, dialect='excel')
-        w.writerows(dojo.training_history)
-
-    with open(DATA_LOCATION + 'action_history.csv', 'w', newline='') as f:
-        w = csv.writer(f, dialect='excel')
-        w.writerows(trainee.history)
-
-
-
-
-
+    dojo.write_history(DATA_LOCATION + 'training_history.csv')
 
 
 def test_simple_match():
@@ -73,5 +65,6 @@ def test_simple_match():
         game.reset()
     print()
     print(score)
+
 
 run_training()

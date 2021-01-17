@@ -1,5 +1,5 @@
 import random
-
+import csv
 from rps.constants import Move, GameState
 from rps.agent.base_agent import RPSAgent
 from rps.utils.utils import get_categorical_move
@@ -8,6 +8,7 @@ from collections import deque
 import numpy as np
 from tensorflow.keras.utils import to_categorical
 import tensorflow as tf
+from pathlib import Path
 
 
 class AiAgent(RPSAgent):
@@ -15,7 +16,7 @@ class AiAgent(RPSAgent):
 
     def __init__(self, prediction_model: tf.keras.Model, gameplay_model: tf.keras.models.Model,
                  move_batch_size=16, training=True,
-                 rewards=None) -> None:
+                 rewards=None, epsilon=0.2, epsilon_decay=None) -> None:
         super().__init__()
 
         if rewards is None:
@@ -41,6 +42,9 @@ class AiAgent(RPSAgent):
         self.state = None
         self.last_observations = None
 
+        self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+
         # Should be loaded with a numpy array containing (state, new_state, action, reward)
         self.experiences = deque(maxlen=2000)
 
@@ -59,7 +63,7 @@ class AiAgent(RPSAgent):
         self.experiences = deque(maxlen=2000)
 
         # Reset weights for the prediction model, so it can learn about a new agent
-        if not self.initial_prediction_weights is None:
+        if self.initial_prediction_weights is not None:
             self.prediction_model.set_weights(self.initial_prediction_weights)
 
     def play(self, opponent_move: Move) -> Move:
@@ -89,7 +93,8 @@ class AiAgent(RPSAgent):
         new_state, new_preds = self.observation_to_state(self.last_observations)
 
         if self.state is not None:
-            self.experiences.append(np.array([self.state, new_state, own_move.value, self.rewards[result]], dtype=object))
+            self.experiences.append(
+                np.array([self.state, new_state, own_move.value, self.rewards[result]], dtype=object))
 
         self.played_rounds += 1
 
@@ -112,7 +117,7 @@ class AiAgent(RPSAgent):
     def estimate_opponent_move(self) -> Move:
         """Runs the predictive model to estimate the opponents' next move"""
         obs = self.get_history_observations(self.move_batch_size)
-        if obs is not None:
+        if obs is not None or (self.training and random.random() > self.epsilon):
             result = self.prediction_model.predict(obs)
             result = np.argmax(result)
 
@@ -144,7 +149,8 @@ class AiAgent(RPSAgent):
             next_move = random.choice(self.moves)
         return next_move
 
-    def observation_to_state(self, observation):
+    @staticmethod
+    def observation_to_state(observation):
         """Receives an observation and translates it into a state, for use with the network
         @:param observation Array-like [own_last_move, opponent_last_move, outcome, predicted_move, hit_ratio]
         @:return Tuple containing the Numpy array with the shape (1, 14) containing the observations for the gameplay,
@@ -179,3 +185,17 @@ class AiAgent(RPSAgent):
             # Reshape to add batch dimension
             observations = observations.reshape((1,) + observations.shape)
             return observations
+
+    def write_history(self, filepath):
+        file = Path(filepath)
+        file.touch()
+
+        with open(file, 'a', newline='') as f:
+            w = csv.writer(f, dialect='excel')
+            # [own_move, opponent_move, result, self.last_estimated_move, self.hit_ratio()]
+            w.writerow(["Own Move", "Opponent Move", "Result", "Last Estimated Move", "Hit Ratio"])
+            w.writerows(self.history)
+
+    def decay_epsilon(self, step):
+        if self.epsilon_decay is not None:
+            self.epsilon = self.epsilon_decay(step)
