@@ -117,7 +117,7 @@ class RPSDojo():
         mask = tf.one_hot(actions - 1, len(Move))
 
         with tf.GradientTape() as tape:
-            all_q = model(states, training=True)
+            all_q = model(states)
             q_values = tf.reduce_sum(all_q * mask, axis=1, keepdims=True)
             loss = tf.reduce_mean(self.loss(target_q, q_values))
 

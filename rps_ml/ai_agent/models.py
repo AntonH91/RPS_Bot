@@ -3,7 +3,6 @@ from abc import ABC
 from tensorflow.keras.layers import LSTM, Dense, InputLayer, BatchNormalization
 
 import tensorflow as tf
-from tensorflow.python.keras.layers import Dropout
 
 
 class DefaultPredictionModel(tf.keras.Model):
@@ -15,7 +14,7 @@ class DefaultPredictionModel(tf.keras.Model):
         super().__init__(*args, **kwargs)
         self.input_layer = InputLayer(input_shape=(None, 10))
 
-        self.lstms = [LSTM(units=32, return_sequences=True) for _ in range(10)]
+        self.lstms = [LSTM(units=32, return_sequences=True) for _ in range(5)]
 
         self.lstm_out = LSTM(units=32, return_sequences=False)
         self.classifier = Dense(units=3, activation='softmax')
@@ -45,13 +44,9 @@ class DefaultGameplayModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.input_layer = InputLayer(input_shape=(14,))
+        self.input_layer = InputLayer(input_shape=(1, 14))
 
-        self.dense_layers = []
-        for x in range(12):
-            self.dense_layers.append(Dense(units=256, activation='relu'))
-
-            self.dense_layers.append(Dropout(rate=0.4))
+        self.dense_layers = [Dense(units=256, activation='relu') for _ in range(6)]
 
         self.output_layer = Dense(units=3, activation='softmax')
 
