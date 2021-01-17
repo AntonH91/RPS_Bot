@@ -91,6 +91,9 @@ class RPSDojo():
             if self.trainee_logging_path is not None:
                 self.trainee.write_history(self.trainee_logging_path)
 
+            # Decay the epsilon rate, if required
+            self.trainee.decay_epsilon(i + 1)
+
             self.game.reset()
             print()
 

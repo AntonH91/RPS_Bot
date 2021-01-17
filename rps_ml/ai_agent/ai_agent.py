@@ -45,6 +45,12 @@ class AiAgent(RPSAgent):
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
 
+        if epsilon_decay:
+            self.epsilon_decay = epsilon_decay
+            self.epsilon = epsilon_decay(1)
+        else:
+            self.epsilon = epsilon
+
         # Should be loaded with a numpy array containing (state, new_state, action, reward)
         self.experiences = deque(maxlen=2000)
 
