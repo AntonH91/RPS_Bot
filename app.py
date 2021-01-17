@@ -1,17 +1,16 @@
-from rps.agent.agents import RepeatAgent, HumanAgent
 from rps.game.GameRunner import GameRunner
 from rps_ml.baseline.rpscontest_agent import DLLU1Agent, MetaFixAgent
 from rps_ml.ai_agent.ai_agent import AiAgent
 from rps_ml.ai_agent.models import DefaultGameplayModel, DefaultPredictionModel
 
 from rps_ml.ai_agent.training import RPSDojo
-from pathlib import Path
 
 import tensorflow as tf
-import csv
+
+from tensorflow.keras.optimizers.schedules import PolynomialDecay
 
 NUM_ROUNDS = 1000
-NUM_GAMES = 10
+NUM_GAMES = 100
 MODEL_LOCATION = 'SavedModels/BestGameplayModel'
 DATA_LOCATION = ''
 
@@ -23,7 +22,12 @@ prediction_model.compile(optimizer=None, loss='categorical_crossentropy')
 
 
 def run_training():
-    trainee = AiAgent(prediction_model, gameplay_model, epsilon=0.2)
+    trainee = AiAgent(prediction_model,
+                      gameplay_model,
+                      epsilon=0.2,
+                      epsilon_decay=PolynomialDecay(initial_learning_rate=0.9,
+                                                    decay_steps=20,
+                                                    end_learning_rate=0.1))
     trainer = MetaFixAgent()
 
     dojo = RPSDojo(trainee=trainee,
@@ -32,6 +36,7 @@ def run_training():
                    optimizer=tf.keras.optimizers.Adam(),
                    loss=tf.keras.losses.MeanSquaredError(),
                    discount=0.95,
+                   batch_size=512,
                    rounds_in_episode=NUM_ROUNDS,
                    trainee_logging_path=DATA_LOCATION + 'action_history.csv'
                    )

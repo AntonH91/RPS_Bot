@@ -28,8 +28,8 @@ class DefaultPredictionModel(tf.keras.Model):
         if optimizer is None:
             optimizer = tf.keras.optimizers.Adam(learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
                 initial_learning_rate=0.1,
-                decay_steps=5,
-                decay_rate=0.9
+                decay_steps=2,
+                decay_rate=0.6
             ))
         super().compile(optimizer, loss, metrics, loss_weights, weighted_metrics, run_eagerly, steps_per_execution,
                         **kwargs)
