@@ -17,6 +17,12 @@ class RPSAgent:
         return constants.Move.ROCK
 
     def game_state(self, own_move: constants.Move, opponent_move: constants.Move, result: constants.GameState):
+        """Used by the game controller to inform the Agent of the current state of the game after a play is made.
+
+        @:param own_move The move made by the agent during the last round
+        @:param opponent_move The move made by the opponent during the last round
+        @:param result The outcome for the agent."""
+
         assert result in constants.GameState, \
             "Result must be GAME_WIN, GAME_DRAW or GAME_LOSS"
         RPSAgent.validate_move(own_move, "own_move must be a Move value")
