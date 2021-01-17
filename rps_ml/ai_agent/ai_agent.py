@@ -123,7 +123,7 @@ class AiAgent(RPSAgent):
     def estimate_opponent_move(self) -> Move:
         """Runs the predictive model to estimate the opponents' next move"""
         obs = self.get_history_observations(self.move_batch_size)
-        if obs is not None or (self.training and random.random() > self.epsilon):
+        if obs is not None:
             result = self.prediction_model.predict(obs)
             result = np.argmax(result)
 
@@ -148,9 +148,12 @@ class AiAgent(RPSAgent):
             self.prediction_history.append(pred_state)
             self.state = inputs
 
-            # Predict the next move
-            next_move = self.gameplay_model.predict(inputs)
-            next_move = self.moves[np.argmax(next_move)]
+            if self.training and random.random() < self.epsilon:
+                next_move = random.choice(self.moves)
+            else:
+                # Predict the next move
+                next_move = self.gameplay_model.predict(inputs)
+                next_move = self.moves[np.argmax(next_move)]
         else:
             next_move = random.choice(self.moves)
         return next_move
