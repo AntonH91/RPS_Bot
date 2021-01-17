@@ -10,7 +10,7 @@ import tensorflow as tf
 from tensorflow.keras.optimizers.schedules import PolynomialDecay
 
 NUM_ROUNDS = 1000
-NUM_GAMES = 100
+NUM_GAMES = 50
 MODEL_LOCATION = 'SavedModels/BestGameplayModel'
 DATA_LOCATION = ''
 
@@ -26,7 +26,7 @@ def run_training():
                       gameplay_model,
                       epsilon=0.2,
                       epsilon_decay=PolynomialDecay(initial_learning_rate=0.9,
-                                                    decay_steps=20,
+                                                    decay_steps=25,
                                                     end_learning_rate=0.1))
     trainer = MetaFixAgent()
 

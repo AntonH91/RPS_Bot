@@ -13,14 +13,19 @@ class DefaultPredictionModel(tf.keras.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.input_layer = InputLayer(input_shape=(None, 10))
-        self.lstm1 = LSTM(units=16, return_sequences=True)
-        self.lstm2 = LSTM(units=16)
+
+        self.lstms = [LSTM(units=32, return_sequences=True) for _ in range(5)]
+
+        self.lstm_out = LSTM(units=32, return_sequences=False)
         self.classifier = Dense(units=3, activation='softmax')
 
     def call(self, inputs, training=None, mask=None):
         x = self.input_layer(inputs)
-        x = self.lstm1(x)
-        x = self.lstm2(x)
+
+        for lstm in self.lstms:
+            x = lstm(x)
+
+        x = self.lstm_out(x)
         return self.classifier(x)
 
     def compile(self, optimizer=None, loss=None, metrics=None, loss_weights=None, weighted_metrics=None,
@@ -39,18 +44,17 @@ class DefaultGameplayModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.input_layer = InputLayer(input_shape=(1, 14))
 
-        self.dense1 = Dense(units=64, activation='relu')
-        self.dense2 = Dense(units=64, activation='relu')
-        self.dense3 = Dense(units=64, activation='relu')
+        self.dense_layers = [Dense(units=256, activation='relu') for _ in range(6)]
 
         self.output_layer = Dense(units=3, activation='softmax')
 
     def call(self, inputs, training=None, mask=None):
+        x = self.input_layer(inputs)
 
-        x = self.dense1(inputs)
-        x = self.dense2(x)
-        x = self.dense3(x)
+        for dense in self.dense_layers:
+            x = dense(x)
 
         return self.output_layer(x)
 
